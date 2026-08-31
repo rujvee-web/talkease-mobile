@@ -1,0 +1,15 @@
+{
+  "name": "TalkEase - ISL Translator",
+  "short_name": "TalkEase",
+  "description": "Bidirectional Indian Sign Language Translator",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#FAF6FB",
+  "theme_color": "#9B7EDE",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "icons/app-icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/app-icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

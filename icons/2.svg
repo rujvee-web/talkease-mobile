@@ -1,0 +1,35 @@
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    @keyframes drawLine { to { stroke-dashoffset: 0; } }
+    @keyframes popIn { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    .bone {
+      stroke: #4F8EF7;
+      stroke-width: 5;
+      stroke-linecap: round;
+      fill: none;
+      stroke-dasharray: 1;
+      stroke-dashoffset: 1;
+      animation: drawLine 0.4s ease forwards;
+    }
+    .joint {
+      fill: #2C5FCC;
+      transform-box: fill-box;
+      transform-origin: center;
+      opacity: 0;
+      animation: popIn 0.25s ease forwards;
+    }
+    .label {
+      font-family: -apple-system, "Segoe UI", sans-serif;
+      font-size: 22px;
+      font-weight: 700;
+      fill: #222222;
+      text-anchor: middle;
+      opacity: 0;
+      animation: popIn 0.3s ease forwards;
+      animation-delay: 0.6s;
+    }
+  </style>
+  <line pathLength="1" class="bone" x1="113.8" y1="118.9" x2="101.7" y2="114.2" style="animation-delay:0.000s;"/><line pathLength="1" class="bone" x1="107.0" y1="170.0" x2="107.6" y2="98.2" style="animation-delay:0.015s;"/><line pathLength="1" class="bone" x1="78.4" y1="132.5" x2="81.2" y2="124.7" style="animation-delay:0.030s;"/><line pathLength="1" class="bone" x1="107.0" y1="170.0" x2="78.4" y2="132.5" style="animation-delay:0.045s;"/><line pathLength="1" class="bone" x1="84.5" y1="115.0" x2="80.7" y2="96.8" style="animation-delay:0.060s;"/><line pathLength="1" class="bone" x1="84.5" y1="115.0" x2="78.4" y2="132.5" style="animation-delay:0.075s;"/><line pathLength="1" class="bone" x1="81.2" y1="124.7" x2="92.0" y2="134.2" style="animation-delay:0.090s;"/><line pathLength="1" class="bone" x1="107.6" y1="98.2" x2="109.4" y2="67.5" style="animation-delay:0.105s;"/><line pathLength="1" class="bone" x1="107.6" y1="98.2" x2="94.3" y2="102.7" style="animation-delay:0.120s;"/><line pathLength="1" class="bone" x1="80.7" y1="96.8" x2="90.2" y2="110.9" style="animation-delay:0.135s;"/><line pathLength="1" class="bone" x1="107.0" y1="170.0" x2="119.2" y2="154.1" style="animation-delay:0.150s;"/><line pathLength="1" class="bone" x1="94.3" y1="102.7" x2="86.9" y2="69.7" style="animation-delay:0.165s;"/><line pathLength="1" class="bone" x1="119.2" y1="154.1" x2="122.2" y2="131.4" style="animation-delay:0.180s;"/><line pathLength="1" class="bone" x1="94.3" y1="102.7" x2="84.5" y2="115.0" style="animation-delay:0.195s;"/><line pathLength="1" class="bone" x1="86.9" y1="69.7" x2="82.1" y2="48.5" style="animation-delay:0.210s;"/><line pathLength="1" class="bone" x1="92.0" y1="134.2" x2="100.0" y2="143.8" style="animation-delay:0.225s;"/><line pathLength="1" class="bone" x1="109.4" y1="67.5" x2="109.9" y2="47.1" style="animation-delay:0.240s;"/><line pathLength="1" class="bone" x1="90.2" y1="110.9" x2="97.2" y2="124.3" style="animation-delay:0.255s;"/><line pathLength="1" class="bone" x1="122.2" y1="131.4" x2="113.8" y2="118.9" style="animation-delay:0.270s;"/><line pathLength="1" class="bone" x1="82.1" y1="48.5" x2="77.8" y2="31.0" style="animation-delay:0.285s;"/><line pathLength="1" class="bone" x1="109.9" y1="47.1" x2="109.5" y2="30.0" style="animation-delay:0.300s;"/>
+  <circle class="joint" cx="107.0" cy="170.0" r="7" style="animation-delay:0.300s;"/><circle class="joint" cx="119.2" cy="154.1" r="4.5" style="animation-delay:0.320s;"/><circle class="joint" cx="122.2" cy="131.4" r="4.5" style="animation-delay:0.340s;"/><circle class="joint" cx="113.8" cy="118.9" r="4.5" style="animation-delay:0.360s;"/><circle class="joint" cx="101.7" cy="114.2" r="7" style="animation-delay:0.380s;"/><circle class="joint" cx="107.6" cy="98.2" r="4.5" style="animation-delay:0.400s;"/><circle class="joint" cx="109.4" cy="67.5" r="4.5" style="animation-delay:0.420s;"/><circle class="joint" cx="109.9" cy="47.1" r="4.5" style="animation-delay:0.440s;"/><circle class="joint" cx="109.5" cy="30.0" r="7" style="animation-delay:0.460s;"/><circle class="joint" cx="94.3" cy="102.7" r="4.5" style="animation-delay:0.480s;"/><circle class="joint" cx="86.9" cy="69.7" r="4.5" style="animation-delay:0.500s;"/><circle class="joint" cx="82.1" cy="48.5" r="4.5" style="animation-delay:0.520s;"/><circle class="joint" cx="77.8" cy="31.0" r="7" style="animation-delay:0.540s;"/><circle class="joint" cx="84.5" cy="115.0" r="4.5" style="animation-delay:0.560s;"/><circle class="joint" cx="80.7" cy="96.8" r="4.5" style="animation-delay:0.580s;"/><circle class="joint" cx="90.2" cy="110.9" r="4.5" style="animation-delay:0.600s;"/><circle class="joint" cx="97.2" cy="124.3" r="7" style="animation-delay:0.620s;"/><circle class="joint" cx="78.4" cy="132.5" r="4.5" style="animation-delay:0.640s;"/><circle class="joint" cx="81.2" cy="124.7" r="4.5" style="animation-delay:0.660s;"/><circle class="joint" cx="92.0" cy="134.2" r="4.5" style="animation-delay:0.680s;"/><circle class="joint" cx="100.0" cy="143.8" r="7" style="animation-delay:0.700s;"/>
+  <text class="label" x="100.0" y="192">2</text>
+</svg>

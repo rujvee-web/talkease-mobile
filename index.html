@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TalkEase — Sign In</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#9B7EDE">
+<link rel="icon" href="icons/app-icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#FAF6FB;
+    --card:#FFFFFF;
+    --primary:#9B7EDE;
+    --primary-dark:#7C5FC4;
+    --primary-tint:#F0E9FB;
+    --secondary:#F6B8CE;
+    --secondary-tint:#FDEBF1;
+    --mint:#8FCFBC;
+    --mint-tint:#E6F5F0;
+    --mint-dark:#5FAF97;
+    --text:#3F3350;
+    --text-muted:#8A7A98;
+    --border:#ECE3F5;
+    --error:#D96B85;
+    --error-tint:#FCEAEF;
+    --success:#5FAF97;
+    --input-bg:#FCFAFE;
+    --glow1:#F3E9FC;
+    --glow2:#FDEEF3;
+    --radius:18px;
+    --shadow: 0 10px 30px -12px rgba(90, 60, 130, 0.18);
+  }
+  body.dark{
+    --bg:#181220;
+    --card:#231A30;
+    --primary:#B39DDB;
+    --primary-dark:#C9B6EE;
+    --primary-tint:#2E2340;
+    --secondary:#F6B8CE;
+    --secondary-tint:#3A2530;
+    --mint:#8FCFBC;
+    --mint-tint:#1F332C;
+    --mint-dark:#7FD9BD;
+    --text:#EDE7F6;
+    --text-muted:#A79BB8;
+    --border:#372B49;
+    --error:#E88DA0;
+    --error-tint:#3A2028;
+    --success:#7FD9BD;
+    --input-bg:#2A2036;
+    --glow1:#2A2040;
+    --glow2:#33222C;
+    --shadow: 0 10px 30px -12px rgba(0, 0, 0, 0.55);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'Plus Jakarta Sans', sans-serif;
+    background:
+      radial-gradient(circle at 15% 10%, var(--glow1) 0%, transparent 45%),
+      radial-gradient(circle at 90% 85%, var(--glow2) 0%, transparent 40%),
+      var(--bg);
+    color:var(--text);
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:28px;
+    transition: background-color .25s ease, color .25s ease;
+  }
+  h1,h2,h3{font-family:'Fraunces', serif; margin:0;}
+  .eyebrow{
+    font-size:11.5px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase;
+    color:var(--primary-dark); margin-bottom:8px; display:flex; align-items:center; gap:8px;
+  }
+  .eyebrow::before{content:''; width:16px; height:1.5px; background:var(--primary-dark); display:inline-block;}
+  button{font-family:inherit; cursor:pointer;}
+  input{font-family:inherit;}
+  a{color:var(--primary-dark); text-decoration:none;}
+  a:hover{text-decoration:underline;}
+
+  /* ---------- App shell ---------- */
+  .app{width:100%; max-width:1000px;}
+  .screen{display:none;}
+  .screen.active{display:block;}
+
+  /* ---------- Auth split card ---------- */
+  .auth-card{
+    background:var(--card);
+    border-radius:26px;
+    box-shadow:var(--shadow);
+    display:grid;
+    grid-template-columns: 0.9fr 1.1fr;
+    overflow:hidden;
+    min-height:560px;
+    border:1px solid var(--border);
+  }
+  .auth-illustration{
+    position:relative;
+    background: linear-gradient(155deg, var(--primary) 0%, #B79AE8 55%, var(--secondary) 100%);
+    padding:44px 38px;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+    color:#fff;
+    overflow:hidden;
+  }
+  .auth-illustration::before{
+    content:'';
+    position:absolute; inset:0;
+    background-image: radial-gradient(rgba(255,255,255,0.16) 1.6px, transparent 1.6px);
+    background-size: 22px 22px;
+    opacity:0.5;
+  }
+  .brand{position:relative; z-index:1; display:flex; align-items:center; gap:10px; font-weight:700; font-size:15px; letter-spacing:0.02em;}
+  .brand-mark{
+    width:34px; height:34px; border-radius:10px; background:rgba(255,255,255,0.22);
+    display:flex; align-items:center; justify-content:center; backdrop-filter: blur(4px);
+  }
+  .hand-glyph{position:relative; z-index:1; margin:auto 0;}
+  .illustration-copy{position:relative; z-index:1;}
+  .illustration-copy h2{font-size:26px; line-height:1.25; font-weight:600; margin-bottom:10px;}
+  .illustration-copy p{font-size:13.5px; line-height:1.6; opacity:0.92; max-width:270px;}
+
+  .auth-form-panel{padding:48px 46px; display:flex; flex-direction:column; justify-content:center;}
+  .auth-form-panel h1{font-size:28px; font-weight:600; margin-bottom:6px;}
+  .subtext{color:var(--text-muted); font-size:14px; margin-bottom:28px;}
+
+  .field{margin-bottom:16px;}
+  .field label{display:block; font-size:12.5px; font-weight:700; margin-bottom:6px; color:var(--text);}
+  .field input{
+    width:100%; padding:12px 14px; border-radius:12px; border:1.5px solid var(--border);
+    background:var(--input-bg); font-size:14px; color:var(--text); outline:none;
+    transition: border-color .15s ease, box-shadow .15s ease;
+  }
+  .field input:focus{border-color:var(--primary); box-shadow:0 0 0 3px var(--primary-tint);}
+  .field-hint{font-size:11.5px; color:var(--text-muted); margin-top:5px;}
+  .field-error{font-size:11.5px; color:var(--error); margin-top:5px; display:none;}
+  .field.invalid input{border-color:var(--error);}
+  .field.invalid .field-error{display:block;}
+
+  .btn-primary{
+    width:100%; padding:13px 16px; border:none; border-radius:12px;
+    background:var(--primary); color:#fff; font-size:14.5px; font-weight:700;
+    letter-spacing:0.01em; box-shadow:0 8px 20px -8px rgba(124,95,196,0.55);
+    transition: background .15s ease, transform .1s ease;
+    margin-top:6px;
+  }
+  .btn-primary:hover{background:var(--primary-dark);}
+  .btn-primary:active{transform:scale(0.98);}
+
+  .btn-text{
+    background:none; border:none; color:var(--primary-dark); font-size:13.5px; font-weight:600; padding:0;
+  }
+
+  .divider-row{display:flex; align-items:center; gap:10px; margin:22px 0;}
+  .divider-row .line{flex:1; height:1px; background:var(--border);}
+  .divider-row span{font-size:11.5px; color:var(--text-muted); font-weight:600;}
+
+  .switch-row{text-align:center; font-size:13.5px; color:var(--text-muted); margin-top:6px;}
+
+  .banner{
+    display:none; align-items:center; gap:9px; padding:11px 14px; border-radius:11px; font-size:12.5px;
+    font-weight:600; margin-bottom:18px;
+  }
+  .banner.show{display:flex;}
+  .banner.success{background:var(--mint-tint); color:var(--mint-dark);}
+  .banner.error{background:var(--error-tint); color:var(--error);}
+  .banner .dot{width:6px; height:6px; border-radius:50%; background:currentColor; flex-shrink:0;}
+
+  .step-track{display:flex; gap:6px; margin-bottom:26px;}
+  .step-track .seg{height:3px; flex:1; border-radius:3px; background:var(--border);}
+  .step-track .seg.done{background:var(--primary);}
+
+  /* ---------- Dashboard ---------- */
+  .dash{
+    background:var(--card); border-radius:26px; border:1px solid var(--border);
+    box-shadow:var(--shadow); padding:0; overflow:hidden;
+  }
+  .dash-top{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:26px 38px; border-bottom:1px solid var(--border);
+  }
+  .dash-brand{display:flex; align-items:center; gap:10px;}
+  .dash-brand .brand-mark{background:var(--primary-tint); color:var(--primary-dark);}
+  .dash-brand span{font-weight:700; font-size:15px;}
+  .user-chip{display:flex; align-items:center; gap:10px;}
+  .avatar{
+    width:34px; height:34px; border-radius:50%; background:var(--secondary-tint); color:var(--primary-dark);
+    display:flex; align-items:center; justify-content:center; font-weight:700; font-size:13px;
+  }
+  .logout-btn{
+    font-size:12.5px; font-weight:700; color:var(--text-muted); background:none; border:1.5px solid var(--border);
+    padding:8px 14px; border-radius:10px; transition: all .15s ease;
+  }
+  .logout-btn:hover{border-color:var(--error); color:var(--error);}
+
+  .dash-hero{padding:38px 38px 8px; text-align:left;}
+  .dash-hero h1{font-size:26px; font-weight:600; margin-bottom:8px;}
+  .dash-hero p{color:var(--text-muted); font-size:14px; max-width:480px; line-height:1.55;}
+
+  .mode-grid{display:grid; grid-template-columns:1fr 1fr; gap:20px; padding:28px 38px 40px;}
+  .mode-card{
+    border-radius:20px; padding:26px 24px; border:1.5px solid var(--border);
+    transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+    position:relative; overflow:hidden;
+  }
+  .mode-card:hover{transform:translateY(-3px); box-shadow:0 14px 28px -14px rgba(90,60,130,0.25);}
+  .mode-card.speech{background: linear-gradient(160deg, var(--secondary-tint), #ffffff 65%);}
+  .mode-card.gesture{background: linear-gradient(160deg, var(--mint-tint), #ffffff 65%);}
+  .mode-card:hover.speech{border-color:var(--secondary);}
+  .mode-card:hover.gesture{border-color:var(--mint);}
+  .mode-icon{
+    width:52px; height:52px; border-radius:14px; display:flex; align-items:center; justify-content:center;
+    margin-bottom:18px;
+  }
+  .mode-card.speech .mode-icon{background:var(--secondary);}
+  .mode-card.gesture .mode-icon{background:var(--mint);}
+  .mode-card h3{font-size:18px; font-weight:600; margin-bottom:6px;}
+  .mode-card p{font-size:13px; color:var(--text-muted); line-height:1.55; margin:0 0 20px;}
+  .mode-btn{
+    width:100%; padding:12px 16px; border:none; border-radius:12px; font-size:13.5px; font-weight:700;
+    color:#fff; letter-spacing:0.01em; transition: transform .1s ease, filter .15s ease;
+  }
+  .mode-btn:hover{filter:brightness(1.06);}
+  .mode-btn:active{transform:scale(0.98);}
+  .speech-btn{background:#D9749A; box-shadow:0 8px 18px -8px rgba(217,116,154,0.55);}
+  .gesture-btn{background:var(--mint-dark); box-shadow:0 8px 18px -8px rgba(95,175,151,0.55);}
+
+  /* animated bars for speech card */
+  .wave{display:flex; align-items:flex-end; gap:3px; height:20px;}
+  .wave span{width:3px; background:#fff; border-radius:2px; animation:bar 1.1s ease-in-out infinite;}
+  .wave span:nth-child(1){height:40%; animation-delay:0s;}
+  .wave span:nth-child(2){height:100%; animation-delay:.15s;}
+  .wave span:nth-child(3){height:65%; animation-delay:.3s;}
+  .wave span:nth-child(4){height:85%; animation-delay:.45s;}
+  .wave span:nth-child(5){height:50%; animation-delay:.6s;}
+  @keyframes bar{0%,100%{transform:scaleY(0.5);} 50%{transform:scaleY(1);}}
+
+  /* ---------- Live mockup overlay ---------- */
+  .overlay{
+    display:none; position:fixed; inset:0; background:rgba(63,51,80,0.45); backdrop-filter:blur(3px);
+    align-items:center; justify-content:center; z-index:50; padding:24px;
+  }
+  .overlay.show{display:flex;}
+  .overlay-card{
+    background:var(--card); border-radius:22px; padding:34px; max-width:420px; width:100%; text-align:center;
+    box-shadow:0 20px 50px -18px rgba(63,51,80,0.4);
+  }
+  .overlay-close{
+    margin-top:22px; background:none; border:1.5px solid var(--border); border-radius:10px;
+    padding:10px 20px; font-size:13px; font-weight:700; color:var(--text-muted);
+  }
+  .overlay-close:hover{border-color:var(--primary); color:var(--primary-dark);}
+  .mic-pulse{
+    width:80px; height:80px; border-radius:50%; background:var(--secondary-tint);
+    display:flex; align-items:center; justify-content:center; margin:0 auto 20px; position:relative;
+  }
+  .mic-pulse::before, .mic-pulse::after{
+    content:''; position:absolute; inset:0; border-radius:50%; border:1.5px solid var(--secondary);
+    animation:pulse 1.8s ease-out infinite;
+  }
+  .mic-pulse::after{animation-delay:.9s;}
+  @keyframes pulse{0%{transform:scale(0.9); opacity:0.8;} 100%{transform:scale(1.6); opacity:0;}}
+  .cam-frame{
+    width:100%; height:320px; border-radius:16px; background:var(--mint-tint);
+    display:flex; align-items:center; justify-content:center; margin-bottom:20px; position:relative; overflow:hidden;
+    border:1.5px dashed var(--mint);
+  }
+  .overlay-note{font-size:12px; color:var(--text-muted); background:var(--primary-tint); padding:10px 14px; border-radius:10px; margin-top:16px; line-height:1.5; text-align:left;}
+
+  @media (max-width:760px){
+    .auth-card{grid-template-columns:1fr;}
+    .auth-illustration{display:none;}
+    .auth-form-panel{padding:34px 26px;}
+    .mode-grid{grid-template-columns:1fr; padding:22px 22px 30px;}
+    .dash-top, .dash-hero{padding-left:22px; padding-right:22px;}
+  }
+</style>
+</head>
+<body>
+
+<button id="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark mode"
+  style="position:fixed; top:18px; right:18px; z-index:999; width:44px; height:44px;
+         border-radius:50%; border:1.5px solid var(--border); background:var(--card);
+         color:var(--text); font-size:18px; cursor:pointer; display:flex;
+         align-items:center; justify-content:center; box-shadow:var(--shadow);
+         transition: background-color .2s ease, border-color .2s ease;">🌙</button>
+
+<div class="app">
+
+  <!-- ===================== SIGNUP ===================== -->
+  <section class="screen active" id="screen-signup">
+    <div class="auth-card">
+      <div class="auth-illustration">
+        <div class="brand">
+          <div class="brand-mark">🗣️</div> TalkEase
+        </div>
+        <div class="hand-glyph">
+          <svg width="150" height="150" viewBox="0 0 150 150" fill="none">
+            <circle cx="75" cy="75" r="62" fill="rgba(255,255,255,0.12)"/>
+            <path d="M55 95 V55 a6 6 0 0 1 12 0 v20 M67 75 V45 a6 6 0 0 1 12 0 v30 M79 75 V50 a6 6 0 0 1 12 0 v25 M91 78 V60 a6 6 0 0 1 12 0 v22 c0 16 -10 28 -26 28 h-6 c-12 0 -20 -6 -26 -18 l-9 -17 a6 6 0 0 1 10 -6 l9 12"
+              stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.95"/>
+          </svg>
+        </div>
+        <div class="illustration-copy">
+          <h2>Sign, spoken.</h2>
+          <p>One account, two directions — turn speech into Indian Sign Language and gestures back into speech.</p>
+        </div>
+      </div>
+
+      <div class="auth-form-panel">
+        <div class="eyebrow">Create account</div>
+        <h1>Join TalkEase</h1>
+        <p class="subtext">Set up your account to start translating.</p>
+
+        <div class="banner error" id="signup-banner"><span class="dot"></span><span id="signup-banner-text"></span></div>
+
+        <form id="signup-form" novalidate>
+          <div class="field" id="su-name-field">
+            <label>Full name</label>
+            <input type="text" id="su-name" placeholder="Priyankaa Sharma" autocomplete="name">
+            <div class="field-error">Enter your name.</div>
+          </div>
+          <div class="field" id="su-email-field">
+            <label>Email</label>
+            <input type="email" id="su-email" placeholder="you@example.com" autocomplete="email">
+            <div class="field-error">Enter a valid email.</div>
+          </div>
+          <div class="field" id="su-pass-field">
+            <label>Password</label>
+            <input type="password" id="su-pass" placeholder="At least 6 characters" autocomplete="new-password">
+            <div class="field-error">Password must be at least 6 characters.</div>
+          </div>
+          <div class="field" id="su-pass2-field">
+            <label>Confirm password</label>
+            <input type="password" id="su-pass2" placeholder="Re-enter password" autocomplete="new-password">
+            <div class="field-error">Passwords don't match.</div>
+          </div>
+          <button type="submit" class="btn-primary">Create account</button>
+        </form>
+
+        <div class="switch-row">Already registered? <a href="#" onclick="goTo('login'); return false;">Log in</a></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== LOGIN ===================== -->
+  <section class="screen" id="screen-login">
+    <div class="auth-card">
+      <div class="auth-illustration">
+        <div class="brand">
+          <div class="brand-mark">🗣️</div> TalkEase
+        </div>
+        <div class="hand-glyph">
+          <svg width="150" height="150" viewBox="0 0 150 150" fill="none">
+            <circle cx="75" cy="75" r="62" fill="rgba(255,255,255,0.12)"/>
+            <path d="M55 95 V55 a6 6 0 0 1 12 0 v20 M67 75 V45 a6 6 0 0 1 12 0 v30 M79 75 V50 a6 6 0 0 1 12 0 v25 M91 78 V60 a6 6 0 0 1 12 0 v22 c0 16 -10 28 -26 28 h-6 c-12 0 -20 -6 -26 -18 l-9 -17 a6 6 0 0 1 10 -6 l9 12"
+              stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.95"/>
+          </svg>
+        </div>
+        <div class="illustration-copy">
+          <h2>Welcome back.</h2>
+          <p>Log in to pick up right where you left off, in either direction.</p>
+        </div>
+      </div>
+
+      <div class="auth-form-panel">
+        <div class="eyebrow">Sign in</div>
+        <h1>Log in to your account</h1>
+        <p class="subtext">Enter your details to continue.</p>
+
+        <div class="banner error" id="login-banner"><span class="dot"></span><span id="login-banner-text"></span></div>
+        <div class="banner success" id="login-success-banner"><span class="dot"></span><span id="login-success-text"></span></div>
+
+        <form id="login-form" novalidate>
+          <div class="field" id="li-email-field">
+            <label>Email</label>
+            <input type="email" id="li-email" placeholder="you@example.com" autocomplete="email">
+            <div class="field-error">Enter your email.</div>
+          </div>
+          <div class="field" id="li-pass-field">
+            <label>Password</label>
+            <input type="password" id="li-pass" placeholder="Your password" autocomplete="current-password">
+            <div class="field-error">Enter your password.</div>
+          </div>
+          <div style="text-align:right; margin-bottom:8px;">
+            <button type="button" class="btn-text" onclick="goTo('reset-request')">Forgot password?</button>
+          </div>
+          <button type="submit" class="btn-primary">Log in</button>
+        </form>
+
+        <div class="switch-row">New here? <a href="#" onclick="goTo('signup'); return false;">Create an account</a></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== RESET: REQUEST ===================== -->
+  <section class="screen" id="screen-reset-request">
+    <div class="auth-card">
+      <div class="auth-illustration">
+        <div class="brand">
+          <div class="brand-mark">🗣️</div> TalkEase
+        </div>
+        <div class="hand-glyph">
+          <svg width="150" height="150" viewBox="0 0 150 150" fill="none">
+            <circle cx="75" cy="75" r="62" fill="rgba(255,255,255,0.12)"/>
+            <path d="M45 75 h60 M75 45 l30 30 -30 30" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.95"/>
+          </svg>
+        </div>
+        <div class="illustration-copy">
+          <h2>It happens.</h2>
+          <p>Enter your email and we'll help you set a new password.</p>
+        </div>
+      </div>
+
+      <div class="auth-form-panel">
+        <div class="eyebrow">Reset password</div>
+        <h1>Forgot your password?</h1>
+        <p class="subtext">We'll send a verification code to your email.</p>
+
+        <div class="step-track"><div class="seg done"></div><div class="seg" id="seg2"></div><div class="seg" id="seg3"></div></div>
+
+        <div class="banner error" id="reset-req-banner"><span class="dot"></span><span id="reset-req-banner-text"></span></div>
+
+        <form id="reset-request-form" novalidate>
+          <div class="field" id="rr-email-field">
+            <label>Email</label>
+            <input type="email" id="rr-email" placeholder="you@example.com" autocomplete="email">
+            <div class="field-error">We couldn't find an account with that email.</div>
+          </div>
+          <button type="submit" class="btn-primary">Send reset code</button>
+        </form>
+
+        <div class="switch-row">Remembered it? <a href="#" onclick="goTo('login'); return false;">Back to login</a></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== RESET: VERIFY + NEW PASSWORD ===================== -->
+  <section class="screen" id="screen-reset-new">
+    <div class="auth-card">
+      <div class="auth-illustration">
+        <div class="brand">
+          <div class="brand-mark">🗣️</div> TalkEase
+        </div>
+        <div class="hand-glyph">
+          <svg width="150" height="150" viewBox="0 0 150 150" fill="none">
+            <circle cx="75" cy="75" r="62" fill="rgba(255,255,255,0.12)"/>
+            <path d="M55 78 l14 14 28 -32" stroke="white" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.95"/>
+            <circle cx="75" cy="75" r="34" stroke="white" stroke-width="3" fill="none" opacity="0.5"/>
+          </svg>
+        </div>
+        <div class="illustration-copy">
+          <h2>Almost there.</h2>
+          <p>Enter the code we sent and choose a fresh password.</p>
+        </div>
+      </div>
+
+      <div class="auth-form-panel">
+        <div class="eyebrow">Reset password</div>
+        <h1>Set a new password</h1>
+        <p class="subtext" id="rn-subtext">Code sent — check your inbox.</p>
+
+        <div class="step-track"><div class="seg done"></div><div class="seg done"></div><div class="seg" id="seg3b"></div></div>
+
+        <div class="banner error" id="reset-new-banner"><span class="dot"></span><span id="reset-new-banner-text"></span></div>
+
+        <form id="reset-new-form" novalidate>
+          <div class="field" id="rn-code-field">
+            <label>Verification code</label>
+            <input type="text" id="rn-code" placeholder="6-digit code (try 000000)" maxlength="6">
+            <div class="field-hint">Demo mode — use <strong>000000</strong>.</div>
+            <div class="field-error">Incorrect code.</div>
+          </div>
+          <div class="field" id="rn-pass-field">
+            <label>New password</label>
+            <input type="password" id="rn-pass" placeholder="At least 6 characters" autocomplete="new-password">
+            <div class="field-error">Password must be at least 6 characters.</div>
+          </div>
+          <div class="field" id="rn-pass2-field">
+            <label>Confirm new password</label>
+            <input type="password" id="rn-pass2" placeholder="Re-enter password" autocomplete="new-password">
+            <div class="field-error">Passwords don't match.</div>
+          </div>
+          <button type="submit" class="btn-primary">Reset password</button>
+        </form>
+
+        <div class="switch-row"><a href="#" onclick="goTo('login'); return false;">Back to login</a></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== DASHBOARD ===================== -->
+  <section class="screen" id="screen-dashboard">
+    <div class="dash">
+      <div class="dash-top">
+        <div class="dash-brand">
+          <div class="brand-mark">🗣️</div>
+          <span>TalkEase</span>
+        </div>
+        <div class="user-chip">
+          <div class="avatar" id="user-avatar">P</div>
+          <div>
+            <div style="font-size:13.5px; font-weight:700;" id="user-name-label">Priyankaa</div>
+            <div style="font-size:11px; color:var(--text-muted);" id="user-email-label">you@example.com</div>
+          </div>
+          <button class="logout-btn" onclick="logout()">Log out</button>
+        </div>
+      </div>
+
+      <div class="dash-hero">
+        <div class="eyebrow">Choose a direction</div>
+        <h1>What would you like to translate?</h1>
+        <p>Pick a mode below to get started. Both modes run on your trained MediaPipe / TensorFlow model — this screen is the entry point into your pipeline.</p>
+      </div>
+
+      <div class="mode-grid">
+        <div class="mode-card speech">
+          <div class="mode-icon"><div class="wave"><span></span><span></span><span></span><span></span><span></span></div></div>
+          <h3>Speech → Gesture</h3>
+          <p>Speak a phrase and see it translated into Indian Sign Language gestures in real time.</p>
+          <button class="mode-btn speech-btn" onclick="openOverlay('speech')">🎙️ Speak to Translate</button>
+        </div>
+
+        <div class="mode-card gesture">
+          <div class="mode-icon" style="font-size:24px; display:flex; align-items:center; justify-content:center;">🤟</div>
+          <h3>Gesture → Speech</h3>
+          <p>Show a sign to your camera and hear it translated back into spoken words instantly.</p>
+          <button class="mode-btn gesture-btn" onclick="openOverlay('gesture')">🤟 Sign to Translate</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<!-- ===================== OVERLAYS (placeholder mockups) ===================== -->
+<div class="overlay" id="overlay-speech">
+  <div class="overlay-card" style="max-width:520px;">
+    <div class="mic-pulse" id="mic-pulse" style="cursor:pointer;" onclick="handleStartListening()">🎙️</div>
+    <h3 style="font-size:18px; margin-bottom:8px;" id="speech-status">Tap the mic to speak</h3>
+    <p id="speech-result" style="font-size:14px; color:var(--text); font-weight:600; min-height:20px;"></p>
+
+    <div id="icon-strip" style="display:flex; flex-wrap:wrap; gap:6px; justify-content:center; margin:16px 0; min-height:60px;"></div>
+
+    <button class="overlay-close" onclick="closeOverlay('speech')">Close</button>
+  </div>
+</div>
+
+<div class="overlay" id="overlay-gesture">
+  <div class="overlay-card" style="max-width:640px;">
+    <div class="cam-frame" id="cam-frame" style="padding:0; position:relative;">
+      <video id="cam-video" autoplay playsinline muted
+             style="width:100%; height:100%; object-fit:cover; border-radius:14px; display:none; transform:scaleX(-1);"></video>
+      <span id="cam-placeholder" style="font-size:40px;">🤟</span>
+    </div>
+
+    <div style="display:flex; justify-content:space-between; align-items:center; margin:16px 0;">
+      <div style="text-align:left;">
+        <div style="font-size:11px; color:var(--text-muted); font-weight:700; text-transform:uppercase; letter-spacing:0.06em;">Predicted</div>
+        <div style="font-size:32px; font-weight:700; font-family:'Fraunces',serif; color:var(--primary-dark);" id="gesture-pred">—</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:11px; color:var(--text-muted); font-weight:700; text-transform:uppercase; letter-spacing:0.06em;">Confidence</div>
+        <div style="font-size:18px; font-weight:700; color:var(--mint-dark);" id="gesture-conf">0%</div>
+      </div>
+    </div>
+
+    <div style="background:var(--primary-tint); border-radius:12px; padding:12px 14px; margin-bottom:14px; font-size:14px; font-weight:600; text-align:left;">
+      Word so far: <span id="gesture-word" style="color:var(--primary-dark);">(empty)</span>
+    </div>
+
+    <div style="display:flex; gap:8px; margin-bottom:8px;">
+      <button class="mode-btn gesture-btn" style="flex:1;" onclick="handleStartCamera()" id="cam-start-btn">▶ Start Camera</button>
+      <button class="mode-btn" style="flex:1; background:var(--primary);" onclick="handleCapture()">✅ Capture</button>
+    </div>
+    <div style="display:flex; gap:8px; margin-bottom:10px;">
+      <button class="mode-btn" style="flex:1; background:#D9749A;" onclick="handleSpeak()">🔊 Speak Word</button>
+      <button class="mode-btn" style="flex:1; background:var(--text-muted);" onclick="handleClearWord()">🗑️ Clear</button>
+    </div>
+
+    <p style="font-size:11.5px; color:var(--text-muted); margin-bottom:10px;">
+      Model status: <span id="model-status">Loading…</span>
+    </p>
+
+    <button class="overlay-close" onclick="handleCloseGesture()">Close</button>
+  </div>
+</div>
+
+<!-- Hidden working canvas used to crop frames before feeding the model -->
+<canvas id="crop-canvas" width="128" height="128" style="display:none;"></canvas>
+
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js"></script>
+<script type="module">
+  import { HandLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
+
+  const IMG_SIZE = 128;
+  const PADDING_RATIO = 0.35;
+  const CLASSES = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ".split('');
+
+  let tfModel = null;
+  let handLandmarker = null;
+  let cameraStream = null;
+  let cameraActive = false;
+  let currentPredictedLetter = null;
+  let currentConfidenceValue = 0;
+
+  async function initModels(){
+    const statusEl = document.getElementById('model-status');
+    try {
+      tfModel = await tf.loadLayersModel('model/model.json');
+
+      const vision = await FilesetResolver.forVisionTasks(
+        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm"
+      );
+      handLandmarker = await HandLandmarker.createFromOptions(vision, {
+        baseOptions: {
+          modelAssetPath: "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task",
+          delegate: "GPU"
+        },
+        runningMode: "VIDEO",
+        numHands: 2,
+        minHandDetectionConfidence: 0.4
+      });
+
+      statusEl.textContent = 'Ready';
+    } catch (err) {
+      statusEl.textContent = 'Failed to load — check your connection';
+      console.error(err);
+    }
+  }
+  initModels();
+
+  function getHandCropBox(landmarksArray, videoWidth, videoHeight){
+    let allX = [], allY = [];
+    for (const hand of landmarksArray){
+      for (const pt of hand){
+        allX.push(pt.x * videoWidth);
+        allY.push(pt.y * videoHeight);
+      }
+    }
+    let xMin = Math.min(...allX), xMax = Math.max(...allX);
+    let yMin = Math.min(...allY), yMax = Math.max(...allY);
+    const padX = (xMax - xMin) * PADDING_RATIO;
+    const padY = (yMax - yMin) * PADDING_RATIO;
+    xMin = Math.max(0, xMin - padX);
+    yMin = Math.max(0, yMin - padY);
+    xMax = Math.min(videoWidth, xMax + padX);
+    yMax = Math.min(videoHeight, yMax + padY);
+    return { xMin, yMin, xMax, yMax };
+  }
+
+  function cropToGrayscaleTensor(canvas){
+    const ctx = canvas.getContext('2d');
+    const imgData = ctx.getImageData(0, 0, IMG_SIZE, IMG_SIZE);
+    const data = imgData.data;
+    const gray = new Float32Array(IMG_SIZE * IMG_SIZE);
+    for (let i = 0; i < IMG_SIZE * IMG_SIZE; i++){
+      const r = data[i*4], g = data[i*4+1], b = data[i*4+2];
+      gray[i] = (0.299*r + 0.587*g + 0.114*b) / 255.0;   // matches cv2 BGR2GRAY weights
+    }
+    return tf.tensor(gray, [1, IMG_SIZE, IMG_SIZE, 1]);
+  }
+
+  async function handleStartCamera(){
+    const btn = document.getElementById('cam-start-btn');
+    const video = document.getElementById('cam-video');
+    const placeholder = document.getElementById('cam-placeholder');
+    btn.textContent = 'Starting…';
+
+    try {
+      cameraStream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }
+      });
+      video.srcObject = cameraStream;
+      await video.play();
+      video.style.display = 'block';
+      placeholder.style.display = 'none';
+      cameraActive = true;
+      btn.textContent = '⏸ Camera Running';
+      requestAnimationFrame(cameraLoop);
+    } catch (err) {
+      btn.textContent = '▶ Start Camera';
+      alert('Could not access camera: ' + err.message);
+    }
+  }
+
+  async function cameraLoop(){
+    if (!cameraActive) return;
+    const video = document.getElementById('cam-video');
+
+    if (video.readyState >= 2 && handLandmarker && tfModel){
+      const results = handLandmarker.detectForVideo(video, performance.now());
+
+      if (results.landmarks && results.landmarks.length > 0){
+        const box = getHandCropBox(results.landmarks, video.videoWidth, video.videoHeight);
+        const cropCanvas = document.getElementById('crop-canvas');
+        const ctx = cropCanvas.getContext('2d');
+        ctx.drawImage(video, box.xMin, box.yMin, box.xMax - box.xMin, box.yMax - box.yMin,
+                      0, 0, IMG_SIZE, IMG_SIZE);
+
+        const inputTensor = cropToGrayscaleTensor(cropCanvas);
+        const prediction = tfModel.predict(inputTensor);
+        const scores = await prediction.data();
+        inputTensor.dispose();
+        prediction.dispose();
+
+        let maxIdx = 0, maxVal = scores[0];
+        for (let i = 1; i < scores.length; i++){
+          if (scores[i] > maxVal){ maxVal = scores[i]; maxIdx = i; }
+        }
+
+        currentPredictedLetter = CLASSES[maxIdx];
+        currentConfidenceValue = maxVal;
+        document.getElementById('gesture-pred').textContent = currentPredictedLetter;
+        document.getElementById('gesture-conf').textContent = (maxVal * 100).toFixed(0) + '%';
+      } else {
+        currentPredictedLetter = null;
+        document.getElementById('gesture-pred').textContent = '—';
+        document.getElementById('gesture-conf').textContent = '0%';
+      }
+    }
+
+    requestAnimationFrame(cameraLoop);
+  }
+
+  function handleCapture(){
+    if (!currentPredictedLetter || currentConfidenceValue <= 0.85) return;
+    const wordEl = document.getElementById('gesture-word');
+    const current = wordEl.textContent === '(empty)' ? '' : wordEl.textContent;
+    wordEl.textContent = current + currentPredictedLetter;
+  }
+
+  function handleSpeak(){
+    const wordEl = document.getElementById('gesture-word');
+    const word = wordEl.textContent;
+    if (word && word !== '(empty)'){
+      speechSynthesis.speak(new SpeechSynthesisUtterance(word));
+    }
+    wordEl.textContent = '(empty)';
+  }
+
+  function handleClearWord(){
+    document.getElementById('gesture-word').textContent = '(empty)';
+  }
+
+  function handleCloseGesture(){
+    cameraActive = false;
+    if (cameraStream){
+      cameraStream.getTracks().forEach(t => t.stop());
+      cameraStream = null;
+    }
+    document.getElementById('cam-video').style.display = 'none';
+    document.getElementById('cam-placeholder').style.display = 'block';
+    document.getElementById('cam-start-btn').textContent = '▶ Start Camera';
+    closeOverlay('gesture');
+  }
+
+  // Expose functions used by inline onclick= attributes elsewhere in the page
+  window.handleStartCamera = handleStartCamera;
+  window.handleCapture = handleCapture;
+  window.handleSpeak = handleSpeak;
+  window.handleClearWord = handleClearWord;
+  window.handleCloseGesture = handleCloseGesture;
+</script>
+  // Accounts are now stored persistently via the Python backend (users.db / SQLite)
+  let currentUser = null;
+  let pendingResetEmail = null;
+
+  /* ---------- LIGHT / DARK MODE ---------- */
+  function applyTheme(isDark){
+    document.body.classList.toggle('dark', isDark);
+    document.getElementById('theme-toggle').textContent = isDark ? '☀️' : '🌙';
+  }
+
+  function toggleTheme(){
+    const isDark = !document.body.classList.contains('dark');
+    applyTheme(isDark);
+    localStorage.setItem('talkease-theme', isDark ? 'dark' : 'light');
+  }
+
+  // Restore saved preference on load (defaults to light if never set)
+  applyTheme(localStorage.getItem('talkease-theme') === 'dark');
+
+  function goTo(screen){
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById('screen-' + screen).classList.add('active');
+    clearBanners();
+  }
+
+  function clearBanners(){
+    document.querySelectorAll('.banner').forEach(b => b.classList.remove('show'));
+  }
+
+  function showBanner(id, textId, msg){
+    document.getElementById(textId).textContent = msg;
+    document.getElementById(id).classList.add('show');
+  }
+
+  function setFieldError(fieldId, isInvalid){
+    const field = document.getElementById(fieldId);
+    if(isInvalid) field.classList.add('invalid');
+    else field.classList.remove('invalid');
+  }
+
+  function isValidEmail(email){
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  }
+
+  /* ---------- ON-DEVICE ACCOUNT STORAGE ----------
+     Accounts are stored in the browser's localStorage (persists across
+     app restarts, private to this device). Passwords are hashed with
+     PBKDF2-SHA256 via the Web Crypto API — never stored in plain text. */
+
+  function getUsers(){
+    return JSON.parse(localStorage.getItem('talkease-users') || '{}');
+  }
+  function saveUsers(users){
+    localStorage.setItem('talkease-users', JSON.stringify(users));
+  }
+
+  async function hashPassword(password, saltHex){
+    const enc = new TextEncoder();
+    const salt = saltHex
+      ? new Uint8Array(saltHex.match(/.{2}/g).map(b => parseInt(b, 16)))
+      : crypto.getRandomValues(new Uint8Array(16));
+
+    const keyMaterial = await crypto.subtle.importKey(
+      'raw', enc.encode(password), 'PBKDF2', false, ['deriveBits']
+    );
+    const bits = await crypto.subtle.deriveBits(
+      { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
+      keyMaterial, 256
+    );
+    const hash = Array.from(new Uint8Array(bits)).map(b => b.toString(16).padStart(2, '0')).join('');
+    const saltOut = Array.from(salt).map(b => b.toString(16).padStart(2, '0')).join('');
+    return { salt: saltOut, hash };
+  }
+
+  /* ---------- SIGNUP ---------- */
+  document.getElementById('signup-form').addEventListener('submit', async function(e){
+    e.preventDefault();
+    document.getElementById('signup-banner').classList.remove('show');
+    const name = document.getElementById('su-name').value.trim();
+    const email = document.getElementById('su-email').value.trim().toLowerCase();
+    const pass = document.getElementById('su-pass').value;
+    const pass2 = document.getElementById('su-pass2').value;
+
+    let valid = true;
+    setFieldError('su-name-field', !name); if(!name) valid = false;
+    setFieldError('su-email-field', !isValidEmail(email)); if(!isValidEmail(email)) valid = false;
+    setFieldError('su-pass-field', pass.length < 6); if(pass.length < 6) valid = false;
+    setFieldError('su-pass2-field', pass !== pass2); if(pass !== pass2) valid = false;
+    if(!valid) return;
+
+    const users = getUsers();
+    if (users[email]){
+      showBanner('signup-banner', 'signup-banner-text', 'This email is already registered — taking you to login.');
+      setTimeout(() => { goTo('login'); document.getElementById('li-email').value = email; }, 1200);
+      return;
+    }
+
+    const { salt, hash } = await hashPassword(pass);
+    users[email] = { name, salt, hash };
+    saveUsers(users);
+
+    document.getElementById('signup-form').reset();
+    goTo('login');
+    document.getElementById('li-email').value = email;
+    showBanner('login-success-banner', 'login-success-text', 'Account created — log in to continue.');
+  });
+
+  /* ---------- LOGIN ---------- */
+  document.getElementById('login-form').addEventListener('submit', async function(e){
+    e.preventDefault();
+    clearBanners();
+    const email = document.getElementById('li-email').value.trim().toLowerCase();
+    const pass = document.getElementById('li-pass').value;
+
+    let valid = true;
+    setFieldError('li-email-field', !isValidEmail(email)); if(!isValidEmail(email)) valid = false;
+    setFieldError('li-pass-field', !pass); if(!pass) valid = false;
+    if(!valid) return;
+
+    const users = getUsers();
+    const user = users[email];
+
+    if (!user){
+      showBanner('login-banner', 'login-banner-text', "No account with that email yet — sign up first.");
+      return;
+    }
+
+    const { hash } = await hashPassword(pass, user.salt);
+    if (hash !== user.hash){
+      showBanner('login-banner', 'login-banner-text', 'Incorrect password. Try again or reset it.');
+      return;
+    }
+
+    currentUser = { name: user.name, email };
+    document.getElementById('user-name-label').textContent = user.name;
+    document.getElementById('user-email-label').textContent = email;
+    document.getElementById('user-avatar').textContent = user.name.charAt(0).toUpperCase();
+    document.getElementById('login-form').reset();
+    goTo('dashboard');
+  });
+
+  /* ---------- RESET: REQUEST ---------- */
+  document.getElementById('reset-request-form').addEventListener('submit', function(e){
+    e.preventDefault();
+    clearBanners();
+    const email = document.getElementById('rr-email').value.trim().toLowerCase();
+    const users = getUsers();
+    const exists = !!users[email];
+    setFieldError('rr-email-field', !exists);
+    if(!exists) return;
+
+    pendingResetEmail = email;
+    document.getElementById('rn-subtext').textContent = 'Code sent to ' + email + ' — check your inbox.';
+    document.getElementById('reset-request-form').reset();
+    goTo('reset-new');
+  });
+
+  /* ---------- RESET: VERIFY + NEW PASSWORD ---------- */
+  document.getElementById('reset-new-form').addEventListener('submit', async function(e){
+    e.preventDefault();
+    clearBanners();
+    const code = document.getElementById('rn-code').value.trim();
+    const pass = document.getElementById('rn-pass').value;
+    const pass2 = document.getElementById('rn-pass2').value;
+
+    let valid = true;
+    setFieldError('rn-code-field', code !== '000000'); if(code !== '000000') valid = false;
+    setFieldError('rn-pass-field', pass.length < 6); if(pass.length < 6) valid = false;
+    setFieldError('rn-pass2-field', pass !== pass2); if(pass !== pass2) valid = false;
+    if(!valid) return;
+
+    const users = getUsers();
+    if (users[pendingResetEmail]){
+      const { salt, hash } = await hashPassword(pass);
+      users[pendingResetEmail].salt = salt;
+      users[pendingResetEmail].hash = hash;
+      saveUsers(users);
+    }
+    const resetEmail = pendingResetEmail;
+    pendingResetEmail = null;
+    document.getElementById('reset-new-form').reset();
+    goTo('login');
+    document.getElementById('li-email').value = resetEmail || '';
+    showBanner('login-success-banner', 'login-success-text', 'Password reset — log in with your new password.');
+  });
+
+  /* ---------- DASHBOARD ---------- */
+  function logout(){
+    currentUser = null;
+    goTo('login');
+  }
+
+  function openOverlay(kind){
+    document.getElementById('overlay-' + kind).classList.add('show');
+  }
+  function closeOverlay(kind){
+    document.getElementById('overlay-' + kind).classList.remove('show');
+  }
+
+  /* ==================================================================
+     SPEECH -> ISL — uses the on-device Web Speech API (no server needed)
+     Note: iOS WKWebView has limited/no support for this API as of
+     writing — Android generally works well. See README for a fallback
+     plugin option if iOS support is needed.
+     ================================================================== */
+  function handleStartListening(){
+    const statusEl = document.getElementById('speech-status');
+    const resultEl = document.getElementById('speech-result');
+    const stripEl = document.getElementById('icon-strip');
+    statusEl.textContent = 'Listening…';
+    resultEl.style.color = 'var(--text)';
+    resultEl.textContent = '';
+    stripEl.innerHTML = '';
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition){
+      statusEl.textContent = 'Not supported';
+      resultEl.style.color = 'var(--error)';
+      resultEl.textContent = 'Speech recognition is not available on this device.';
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'en-US';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.onresult = async (event) => {
+      const text = event.results[0][0].transcript;
+      statusEl.textContent = 'You said:';
+      resultEl.textContent = text;
+      speechSynthesis.speak(new SpeechSynthesisUtterance(text));
+
+      const chars = text.toUpperCase().split('').filter(c => /[A-Z0-9]/.test(c));
+      for (const ch of chars){
+        const wrapper = document.createElement('div');
+        wrapper.style.width = '90px';
+        wrapper.style.height = '90px';
+        wrapper.style.transform = 'scale(0.45)';
+        wrapper.style.transformOrigin = 'top left';
+        try {
+          const resp = await fetch(`icons/${ch}.html`);
+          if (resp.ok){
+            wrapper.innerHTML = await resp.text();
+          } else {
+            throw new Error('missing icon');
+          }
+        } catch (e){
+          wrapper.textContent = ch;
+          wrapper.style.display = 'flex';
+          wrapper.style.alignItems = 'center';
+          wrapper.style.justifyContent = 'center';
+          wrapper.style.fontWeight = '700';
+        }
+        stripEl.appendChild(wrapper);
+      }
+    };
+
+    recognition.onerror = (event) => {
+      statusEl.textContent = 'Try again';
+      resultEl.style.color = 'var(--error)';
+      resultEl.textContent = 'Error: ' + event.error;
+    };
+
+    recognition.start();
+  }
+
+  // Register service worker for offline caching (needed for a good TWA experience)
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(err => console.log('SW registration failed:', err));
+    });
+  }
+</script>
+
+</body>
+</html>
