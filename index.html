@@ -767,7 +767,9 @@
   window.handleClearWord = handleClearWord;
   window.handleCloseGesture = handleCloseGesture;
 </script>
-  // Accounts are now stored persistently via the Python backend (users.db / SQLite)
+
+<script>
+  // Accounts are stored on-device via localStorage (see hashPassword/getUsers below)
   let currentUser = null;
   let pendingResetEmail = null;
 
