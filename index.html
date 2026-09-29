@@ -974,11 +974,45 @@
      writing — Android generally works well. See README for a fallback
      plugin option if iOS support is needed.
      ================================================================== */
+  // Quick pre-check: measure ambient noise level for ~400ms before listening,
+  // and warn the user if it's high — the Web Speech API gives us no direct
+  // noise-filtering controls, so guiding the user to a better moment/position
+  // is the most effective lever actually available here.
+  async function checkAmbientNoise(){
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
+      });
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const source = audioCtx.createMediaStreamSource(stream);
+      const analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 512;
+      source.connect(analyser);
+
+      const data = new Uint8Array(analyser.frequencyBinCount);
+      let maxLevel = 0;
+      const start = performance.now();
+
+      while (performance.now() - start < 400){
+        analyser.getByteFrequencyData(data);
+        const avg = data.reduce((a, b) => a + b, 0) / data.length;
+        maxLevel = Math.max(maxLevel, avg);
+        await new Promise(r => setTimeout(r, 40));
+      }
+
+      stream.getTracks().forEach(t => t.stop());
+      audioCtx.close();
+      return maxLevel;   // roughly 0-255; higher = noisier room
+    } catch (e){
+      return 0;   // if this fails, just skip the warning — not critical
+    }
+  }
+
   function handleStartListening(){
     const statusEl = document.getElementById('speech-status');
     const resultEl = document.getElementById('speech-result');
     const stripEl = document.getElementById('icon-strip');
-    statusEl.textContent = 'Listening…';
+    statusEl.textContent = 'Checking room noise…';
     resultEl.style.color = 'var(--text)';
     resultEl.textContent = '';
     stripEl.innerHTML = '';
@@ -991,49 +1025,70 @@
       return;
     }
 
-    const recognition = new SpeechRecognition();
-    recognition.lang = 'en-US';
-    recognition.interimResults = false;
-    recognition.maxAlternatives = 1;
-
-    recognition.onresult = async (event) => {
-      const text = event.results[0][0].transcript;
-      statusEl.textContent = 'You said:';
-      resultEl.textContent = text;
-      speechSynthesis.speak(new SpeechSynthesisUtterance(text));
-
-      const chars = text.toUpperCase().split('').filter(c => /[A-Z0-9]/.test(c));
-      for (const ch of chars){
-        const wrapper = document.createElement('div');
-        wrapper.style.width = '90px';
-        wrapper.style.height = '90px';
-        wrapper.style.transform = 'scale(0.45)';
-        wrapper.style.transformOrigin = 'top left';
-        try {
-          const resp = await fetch(`icons/${ch}.html`);
-          if (resp.ok){
-            wrapper.innerHTML = await resp.text();
-          } else {
-            throw new Error('missing icon');
-          }
-        } catch (e){
-          wrapper.textContent = ch;
-          wrapper.style.display = 'flex';
-          wrapper.style.alignItems = 'center';
-          wrapper.style.justifyContent = 'center';
-          wrapper.style.fontWeight = '700';
-        }
-        stripEl.appendChild(wrapper);
+    checkAmbientNoise().then((noiseLevel) => {
+      if (noiseLevel > 40){
+        resultEl.style.color = 'var(--error)';
+        resultEl.textContent = 'It sounds noisy right now — try moving somewhere quieter or speaking closer to the mic for better accuracy.';
       }
-    };
+      statusEl.textContent = 'Listening…';
 
-    recognition.onerror = (event) => {
-      statusEl.textContent = 'Try again';
-      resultEl.style.color = 'var(--error)';
-      resultEl.textContent = 'Error: ' + event.error;
-    };
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'en-US';
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 3;   // consider a few guesses, not just the top one
 
-    recognition.start();
+      recognition.onresult = async (event) => {
+        // Pick the alternative with the highest confidence, not just index 0 —
+        // in noisy audio the top-ranked guess isn't always the most confident one
+        const alternatives = event.results[0];
+        let best = alternatives[0];
+        for (let i = 1; i < alternatives.length; i++){
+          if (alternatives[i].confidence > best.confidence) best = alternatives[i];
+        }
+        const text = best.transcript;
+
+        statusEl.textContent = 'You said:';
+        resultEl.style.color = 'var(--text)';
+        resultEl.textContent = text;
+        speechSynthesis.speak(new SpeechSynthesisUtterance(text));
+
+        const chars = text.toUpperCase().split('').filter(c => /[A-Z0-9]/.test(c));
+        for (const ch of chars){
+          const wrapper = document.createElement('div');
+          wrapper.style.width = '90px';
+          wrapper.style.height = '90px';
+          wrapper.style.transform = 'scale(0.45)';
+          wrapper.style.transformOrigin = 'top left';
+          try {
+            const resp = await fetch(`icons/${ch}.html`);
+            if (resp.ok){
+              wrapper.innerHTML = await resp.text();
+            } else {
+              throw new Error('missing icon');
+            }
+          } catch (e){
+            wrapper.textContent = ch;
+            wrapper.style.display = 'flex';
+            wrapper.style.alignItems = 'center';
+            wrapper.style.justifyContent = 'center';
+            wrapper.style.fontWeight = '700';
+          }
+          stripEl.appendChild(wrapper);
+        }
+      };
+
+      recognition.onerror = (event) => {
+        statusEl.textContent = 'Try again';
+        resultEl.style.color = 'var(--error)';
+        if (event.error === 'no-speech'){
+          resultEl.textContent = 'No speech detected — try speaking a bit louder or closer to the mic.';
+        } else {
+          resultEl.textContent = 'Error: ' + event.error;
+        }
+      };
+
+      recognition.start();
+    });
   }
 
   // Register service worker for offline caching (needed for a good TWA experience)
