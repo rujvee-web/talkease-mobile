@@ -537,9 +537,24 @@
     <h3 style="font-size:18px; margin-bottom:8px;" id="speech-status">Tap the mic to speak</h3>
     <p id="speech-result" style="font-size:14px; color:var(--text); font-weight:600; min-height:20px;"></p>
 
+    <div id="speech-fallback" style="display:none; gap:8px; margin:12px 0;">
+      <input id="speech-text-input" type="text" placeholder="Type a phrase…" autocomplete="off"
+             onkeydown="if(event.key==='Enter'){handleTypedSubmit();}"
+             style="flex:1; padding:12px 14px; border:1.5px solid var(--border); border-radius:12px;
+                    background:var(--input-bg); color:var(--text); font-size:14px; outline:none;">
+      <button onclick="handleTypedSubmit()" aria-label="Translate typed text"
+              style="padding:0 18px; border:none; border-radius:12px; background:var(--primary);
+                     color:#fff; font-size:18px; cursor:pointer;">➜</button>
+    </div>
+
     <div id="icon-strip" style="display:flex; flex-wrap:wrap; gap:6px; justify-content:center; margin:16px 0; min-height:60px;"></div>
 
-    <button class="overlay-close" onclick="closeOverlay('speech')">Close</button>
+    <div style="display:flex; gap:10px; justify-content:center; align-items:center;">
+      <button onclick="toggleTypedFallback()" aria-label="Type instead of speaking" title="Type instead"
+              style="width:44px; height:44px; border-radius:50%; border:1.5px solid var(--border);
+                     background:var(--card); font-size:18px; cursor:pointer;">⌨️</button>
+      <button class="overlay-close" style="margin-top:0;" onclick="closeOverlay('speech')">Close</button>
+    </div>
   </div>
 </div>
 
@@ -957,6 +972,7 @@
     document.getElementById('overlay-' + kind).classList.add('show');
   }
   function closeOverlay(kind){
+    if (kind === 'speech') stopListening();
     document.getElementById('overlay-' + kind).classList.remove('show');
   }
 
@@ -966,121 +982,211 @@
      writing — Android generally works well. See README for a fallback
      plugin option if iOS support is needed.
      ================================================================== */
-  // Quick pre-check: measure ambient noise level for ~400ms before listening,
-  // and warn the user if it's high — the Web Speech API gives us no direct
-  // noise-filtering controls, so guiding the user to a better moment/position
-  // is the most effective lever actually available here.
-  async function checkAmbientNoise(){
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
-      });
-      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      const source = audioCtx.createMediaStreamSource(stream);
-      const analyser = audioCtx.createAnalyser();
-      analyser.fftSize = 512;
-      source.connect(analyser);
+  /* ==================================================================
+     SPEECH -> ISL (reliability-focused)
+     - one mic acquisition only (no pre-check that competes with recognition)
+     - shows "Speak now" only once the mic is genuinely live
+     - auto-retries transient failures, has a watchdog so it can never hang
+     - typed-input fallback so the feature can never dead-end
+     ================================================================== */
+  let activeRecognition = null;
+  let listening = false;
+  let watchdog = null;
+  let renderToken = 0;
 
-      const data = new Uint8Array(analyser.frequencyBinCount);
-      let maxLevel = 0;
-      const start = performance.now();
+  function setSpeech(status, message, isError){
+    document.getElementById('speech-status').textContent = status;
+    const r = document.getElementById('speech-result');
+    r.style.color = isError ? 'var(--error)' : 'var(--text)';
+    r.textContent = message || '';
+  }
 
-      while (performance.now() - start < 400){
-        analyser.getByteFrequencyData(data);
-        const avg = data.reduce((a, b) => a + b, 0) / data.length;
-        maxLevel = Math.max(maxLevel, avg);
-        await new Promise(r => setTimeout(r, 40));
+  function showTypedFallback(show){
+    const el = document.getElementById('speech-fallback');
+    el.style.display = show ? 'flex' : 'none';
+    if (show) document.getElementById('speech-text-input').focus();
+  }
+
+  function toggleTypedFallback(){
+    const el = document.getElementById('speech-fallback');
+    showTypedFallback(el.style.display === 'none');
+  }
+
+  async function renderSigns(text){
+    const stripEl = document.getElementById('icon-strip');
+    stripEl.innerHTML = '';
+    const myToken = ++renderToken;   // prevents two renders interleaving
+
+    const chars = text.toUpperCase().split('').filter(c => /[A-Z0-9]/.test(c));
+    for (const ch of chars){
+      if (myToken !== renderToken) return;
+      const wrapper = document.createElement('div');
+      wrapper.style.width = '90px';
+      wrapper.style.height = '90px';
+      wrapper.style.transform = 'scale(0.45)';
+      wrapper.style.transformOrigin = 'top left';
+      try {
+        const resp = await fetch(`icons/${ch}.html`);
+        if (!resp.ok) throw new Error('missing icon');
+        wrapper.innerHTML = await resp.text();
+      } catch (err){
+        wrapper.textContent = ch;
+        wrapper.style.display = 'flex';
+        wrapper.style.alignItems = 'center';
+        wrapper.style.justifyContent = 'center';
+        wrapper.style.fontWeight = '700';
       }
+      if (myToken !== renderToken) return;
+      stripEl.appendChild(wrapper);
+    }
+  }
 
-      stream.getTracks().forEach(t => t.stop());
-      audioCtx.close();
-      return maxLevel;   // roughly 0-255; higher = noisier room
-    } catch (e){
-      return 0;   // if this fails, just skip the warning — not critical
+  function handleTypedSubmit(){
+    const input = document.getElementById('speech-text-input');
+    const text = input.value.trim();
+    if (!text) return;
+    setSpeech('You typed:', text, false);
+    renderSigns(text);
+  }
+
+  function stopListening(){
+    clearTimeout(watchdog);
+    const rec = activeRecognition;
+    activeRecognition = null;
+    listening = false;
+    if (rec){
+      try { rec.abort(); } catch (err){}
+    }
+  }
+
+  function startAttempt(attempt){
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const rec = new SR();
+    activeRecognition = rec;
+    rec.lang = 'en-US';
+    rec.continuous = false;
+    rec.interimResults = true;    // live text while speaking = visible proof it's working
+    rec.maxAlternatives = 3;
+
+    let finalText = '';
+    let lastText = '';
+    let finished = false;
+
+    const finish = (text) => {
+      if (finished) return;
+      finished = true;
+      clearTimeout(watchdog);
+      activeRecognition = null;
+      listening = false;
+      setSpeech('You said:', text, false);
+      speechSynthesis.speak(new SpeechSynthesisUtterance(text));
+      renderSigns(text);
+    };
+
+    const fail = (retryable, message) => {
+      if (finished) return;
+      finished = true;
+      clearTimeout(watchdog);
+      activeRecognition = null;
+      if (retryable && attempt < 2){
+        setSpeech('Retrying…', '', false);
+        // short pause so the mic is fully released before the next attempt
+        setTimeout(() => { if (listening) startAttempt(attempt + 1); }, 500);
+        return;
+      }
+      listening = false;
+      setSpeech('Try again', message, true);
+      showTypedFallback(true);
+    };
+
+    rec.onaudiostart = () => {
+      if (rec !== activeRecognition) return;
+      setSpeech('Speak now…', '', false);   // only shown once the mic is truly live
+    };
+
+    rec.onspeechstart = () => {
+      if (rec !== activeRecognition) return;
+      setSpeech('Hearing you…', lastText, false);
+    };
+
+    rec.onresult = (event) => {
+      if (rec !== activeRecognition) return;
+      let interim = '';
+      for (let i = event.resultIndex; i < event.results.length; i++){
+        const res = event.results[i];
+        if (res.isFinal){
+          let best = res[0];
+          for (let j = 1; j < res.length; j++){
+            if (res[j].confidence > best.confidence) best = res[j];
+          }
+          finalText += best.transcript + ' ';
+        } else {
+          interim += res[0].transcript;
+        }
+      }
+      lastText = (finalText + interim).trim();
+      if (lastText) document.getElementById('speech-result').textContent = lastText;
+    };
+
+    rec.onerror = (event) => {
+      if (rec !== activeRecognition) return;
+      const code = event.error;
+      if (code === 'not-allowed' || code === 'service-not-allowed'){
+        fail(false, 'Microphone is blocked. Tap the lock icon in the address bar, allow Microphone, then try again.');
+      } else if (code === 'network'){
+        fail(true, 'Speech service unreachable. Check your internet connection.');
+      } else if (code === 'no-speech'){
+        fail(true, 'Did not hear anything. Speak right after you see "Speak now".');
+      } else if (code === 'audio-capture'){
+        fail(true, 'Microphone is busy or unavailable. Close other apps that use it.');
+      } else if (code === 'aborted'){
+        // handled by onend
+      } else {
+        fail(true, 'Speech error: ' + code);
+      }
+    };
+
+    rec.onend = () => {
+      if (rec !== activeRecognition || finished) return;
+      const text = (finalText || lastText).trim();
+      if (text) finish(text);   // use what we heard even if the engine never flagged "final"
+      else fail(true, 'Did not catch that. Try again closer to the mic.');
+    };
+
+    // Watchdog: if nothing resolves within 12s, force it to end rather than hang
+    clearTimeout(watchdog);
+    watchdog = setTimeout(() => {
+      if (rec !== activeRecognition || finished) return;
+      try { rec.abort(); } catch (err){}
+      setTimeout(() => {
+        if (rec === activeRecognition && !finished){
+          fail(true, 'Speech service timed out.');
+        }
+      }, 1500);
+    }, 12000);
+
+    try {
+      rec.start();
+    } catch (err){
+      fail(true, 'Could not start the microphone.');
     }
   }
 
   function handleStartListening(){
-    const statusEl = document.getElementById('speech-status');
-    const resultEl = document.getElementById('speech-result');
-    const stripEl = document.getElementById('icon-strip');
-    statusEl.textContent = 'Checking room noise…';
-    resultEl.style.color = 'var(--text)';
-    resultEl.textContent = '';
-    stripEl.innerHTML = '';
+    if (listening) return;   // ignore repeated taps while a session is running
 
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition){
-      statusEl.textContent = 'Not supported';
-      resultEl.style.color = 'var(--error)';
-      resultEl.textContent = 'Speech recognition is not available on this device.';
+    document.getElementById('icon-strip').innerHTML = '';
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR){
+      setSpeech('Not supported', 'Speech recognition is not available in this browser. Type instead.', true);
+      showTypedFallback(true);
       return;
     }
 
-    checkAmbientNoise().then((noiseLevel) => {
-      if (noiseLevel > 40){
-        resultEl.style.color = 'var(--error)';
-        resultEl.textContent = 'It sounds noisy right now — try moving somewhere quieter or speaking closer to the mic for better accuracy.';
-      }
-      statusEl.textContent = 'Listening…';
-
-      const recognition = new SpeechRecognition();
-      recognition.lang = 'en-US';
-      recognition.interimResults = false;
-      recognition.maxAlternatives = 3;   // consider a few guesses, not just the top one
-
-      recognition.onresult = async (event) => {
-        // Pick the alternative with the highest confidence, not just index 0 —
-        // in noisy audio the top-ranked guess isn't always the most confident one
-        const alternatives = event.results[0];
-        let best = alternatives[0];
-        for (let i = 1; i < alternatives.length; i++){
-          if (alternatives[i].confidence > best.confidence) best = alternatives[i];
-        }
-        const text = best.transcript;
-
-        statusEl.textContent = 'You said:';
-        resultEl.style.color = 'var(--text)';
-        resultEl.textContent = text;
-        speechSynthesis.speak(new SpeechSynthesisUtterance(text));
-
-        const chars = text.toUpperCase().split('').filter(c => /[A-Z0-9]/.test(c));
-        for (const ch of chars){
-          const wrapper = document.createElement('div');
-          wrapper.style.width = '90px';
-          wrapper.style.height = '90px';
-          wrapper.style.transform = 'scale(0.45)';
-          wrapper.style.transformOrigin = 'top left';
-          try {
-            const resp = await fetch(`icons/${ch}.html`);
-            if (resp.ok){
-              wrapper.innerHTML = await resp.text();
-            } else {
-              throw new Error('missing icon');
-            }
-          } catch (e){
-            wrapper.textContent = ch;
-            wrapper.style.display = 'flex';
-            wrapper.style.alignItems = 'center';
-            wrapper.style.justifyContent = 'center';
-            wrapper.style.fontWeight = '700';
-          }
-          stripEl.appendChild(wrapper);
-        }
-      };
-
-      recognition.onerror = (event) => {
-        statusEl.textContent = 'Try again';
-        resultEl.style.color = 'var(--error)';
-        if (event.error === 'no-speech'){
-          resultEl.textContent = 'No speech detected — try speaking a bit louder or closer to the mic.';
-        } else {
-          resultEl.textContent = 'Error: ' + event.error;
-        }
-      };
-
-      recognition.start();
-    });
+    speechSynthesis.cancel();   // don't let a previous spoken reply hold the audio session
+    listening = true;
+    setSpeech('Starting mic…', '', false);
+    startAttempt(1);
   }
 
   // Register service worker for offline caching (needed for a good TWA experience)
